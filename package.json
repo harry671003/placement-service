@@ -11,11 +11,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "parcel": "^2.6.2"
+    "@parcel/transformer-vue": "^2.11.0",
+    "@vue/component-compiler-utils": "^3.3.0",
+    "parcel": "^2.6.2",
+    "parcel-bundler": "^1.12.5",
+    "vue": "^3.4.15"
   },
   "dependencies": {
     "@cubejs-client/core": "^0.31.0",
     "bootstrap": "^5.3.2",
-    "chart.js": "^4.0.0"
+    "chart.js": "^4.0.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.15",
+    "vue-chartjs": "^5.3.0"
   }
 }
