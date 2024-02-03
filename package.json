@@ -1,0 +1,21 @@
+{
+  "name": "placement-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "parcel src/index.html",
+    "prebuild": "npx rimraf build",
+    "build": "parcel build ./src/index.html --experimental-scope-hoisting --out-dir build"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel": "^2.6.2"
+  },
+  "dependencies": {
+    "@cubejs-client/core": "^0.31.0",
+    "bootstrap": "^5.3.2",
+    "chart.js": "^4.0.0"
+  }
+}
