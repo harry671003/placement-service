@@ -2,10 +2,11 @@
 class Ingester { 
     constructor(name) { 
         this.name = name;
+        this.series = 0;
     }
 
     getSeries() {
-        return 10000
+        return this.series
     }
 } 
 

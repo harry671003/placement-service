@@ -1,7 +1,7 @@
 <script setup>
 import Nav from './Nav'
 import Graph from './Graph'
-import Controls from './Controls'
+import Tenants from './Tenants'
 </script>
 
 <template>
@@ -9,7 +9,7 @@ import Controls from './Controls'
     <div class="container">
         <div class="row">
             <div class="col-lg-2 d-flex flex-column flex-shrink-0 p-3 bg-light">
-                <Controls></Controls>
+                <Tenants></Tenants>
             </div>
             
             <div class="col-lg">

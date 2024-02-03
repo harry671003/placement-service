@@ -4,27 +4,32 @@ import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
-import {useIngesterStore} from '../store/ingester-store'
+import { useStore } from '../store/store'
 
 export default {
   name: 'BarChart',
   components: { Bar },
   computed: {
     chartData() {
-      const store = useIngesterStore()
+      const store = useStore()
+      const ingesters = store.cortex.ingesters
+
       const labels = []
-      const datasets = []
-      for(let i = 0; i < store.ingesters.length; i++) {
-        labels.push(store.ingesters[i].name)
-        datasets.push(store.ingesters[i].getSeries())
+      const data = []
+      for (let i = 0; i < ingesters.length; i++) {
+        labels.push(ingesters[i].name)
+        data.push(ingesters[i].getSeries())
       }
 
-      console.log(labels)
-      console.log(datasets)
-      return {
+      const retval = {
         labels: labels,
-        datasets: datasets,
+        datasets: [
+          { data: data },
+        ],
       }
+      console.log(retval)
+
+      return retval
     },
     chartOptions() {
       return {
@@ -37,5 +42,5 @@ export default {
 </script>
 
 <template>
-  <Bar id="chart" :options="chartOptions" :data="chartData"/>
+  <Bar id="chart" :options="chartOptions" :data="chartData" />
 </template>
