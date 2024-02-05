@@ -9,10 +9,13 @@ class PlacementService {
 
     createTenant(alias) {
         const lps = this.generateLogicalPartitions(4)
-        this.partitionInfo.tenants[`ws-${generateID()}`] = {
+        const tenantID = `ws-${generateID()}`
+        this.partitionInfo.tenants[tenantID] = {
             alias: alias,
             logicalPartitions: lps, 
         }
+
+        return tenantID
     }
 
     loop() {

@@ -2,6 +2,11 @@ class Ingester {
     constructor(name) { 
         this.name = name;
         this.partitions = new Map()
+        this.ingestedData = new Map()
+    }
+
+    loop() {
+
     }
 
     getPartitions() {
@@ -16,9 +21,20 @@ class Ingester {
     getSeriesCount() {
         let retval = 0
         for(let [key, value] of this.partitions) {
-            retval += value.series
+            const ingested = this.ingestedData.get(key)
+            if (ingested) {
+                retval += ingested.series
+            }
         };
         return retval
+    }
+
+    ingest(partitionId, series) {
+        const time = new Date()
+        this.ingestedData.set(partitionId, {
+            series: series,
+            lastTime: time,
+        })
     }
 }
 

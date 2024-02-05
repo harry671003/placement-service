@@ -8,6 +8,10 @@ class Distributor {
         
     }
 
+    ingest(tenantID, series) {
+        console.log("ingesting ", tenantID, series)
+    }
+
     getSeries() {
         return this.series
     }

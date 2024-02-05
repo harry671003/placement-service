@@ -1,6 +1,7 @@
 import { Ingester } from './ingester.js'
 import { Distributor } from './distributor.js'
 import { PlacementService } from './placement.js'
+import { Tenant } from './tenant.js'
 
 function initCortex(partitionInfo) {
     const ingesters = new Map()
@@ -14,22 +15,54 @@ function initCortex(partitionInfo) {
     return cortex
 }
 
+class Interval {
+    constructor(timeFactor) {
+        this.timeFactor = timeFactor
+        this.placementUpdate = 60 * 1000 // 1 minute
+        this.ingestUpdate = 5 * 60 * 1000 // 5 minutes
+    }
+
+    get ingestUpdateInterval() {
+        return this.ingestUpdate / this.timeFactor
+    }
+
+    get placementUpdateInterval() {
+        return this.placementUpdate / this.timeFactor
+    }
+}
+
 class Cortex { 
     constructor(ingesters, distributor, placementService, partitionInfo) { 
         this.ingesters = ingesters
         this.distributor = distributor
         this.placementService = placementService
-        this.partitionInfo - partitionInfo
-        this.timer = 5000
+        this.partitionInfo = partitionInfo
+        this.tenants = new Map()
+
+        this.interval = new Interval(10)
     }
 
     loop() {
         const crtx = this
-        function loopInternal() {
+        function placementUpdate() {
             crtx.placementService.loop()
-            setTimeout(loopInternal, crtx.timer)
+            setTimeout(placementUpdate, crtx.interval.placementUpdateInterval)
         }
-        loopInternal()
+        
+
+        function tenantIngest() {
+            for(let [key, tenant] of crtx.tenants) {
+                tenant.loop()
+            }
+            setTimeout(tenantIngest, crtx.interval.ingestUpdateInterval)
+        }
+
+        placementUpdate()
+        tenantIngest()
+    }
+
+    updateInterval() {
+        this.interval = new Interval(timeFactor)
     }
   
     scaleUp(n) {
@@ -42,7 +75,9 @@ class Cortex {
     }
 
     createTenant(alias) {
-        this.placementService.createTenant(alias)
+        const tenantID = this.placementService.createTenant(alias)
+        const tenant = new Tenant(tenantID, this.distributor, 0)
+        this.tenants.set(tenantID, tenant)
     }
 }
 
