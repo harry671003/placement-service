@@ -31,7 +31,6 @@ class PlacementService {
         };
 
         placementMatrix.sort((a, b) => {
-            console.log(a)
             if (a.series == b.series) {
                 return a.physicalPartitions.size > b.physicalPartitions.size
             }
@@ -56,8 +55,8 @@ class PlacementService {
         this.partitionInfo.logicalPartitions[log] = {
             id: log,
             physicalPartitions: [phy],
-            start: new Date().toISOString(),
-            end: 'now',
+            minTime: new Date().toISOString(),
+            maxTime: '3000-01-01T00:00:00Z',
         }
         return log
     }
@@ -66,8 +65,8 @@ class PlacementService {
         const id = `phy-${generateID()}`
         const phy = {
             id: id,
-            start: new Date().toISOString(),
-            end: '3000-01-01T00:00:00Z',
+            minTime: new Date().toISOString(),
+            maxTime: '3000-01-01T00:00:00Z',
         }
         const stores = this.assignPhysicalPartition(phy, 3)
 

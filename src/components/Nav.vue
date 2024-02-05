@@ -17,6 +17,12 @@
                     <li class="nav-item">
                         <a class="nav-link" @click="ingestSeries">Ingest Series</a>
                     </li>
+                    <li class="nav-item">
+                        <router-link class="nav-link" to="/ingesters">Ingesters</router-link>
+                    </li>
+                    <li class="nav-item">
+                        <router-link class="nav-link" to="/physical">Physical Partitions</router-link>
+                    </li>
                 </ul>
             </div>
         </div>
