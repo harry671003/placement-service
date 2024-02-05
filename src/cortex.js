@@ -22,7 +22,7 @@ class Interval {
         this.timeFactor = timeFactor
         this.placementServiceLoop = 60 * 1000 // 1 minute
         this.tenantLoop = 5 * 60 * 1000 // 5 minutes
-        this.ingesterLoop = 2 * 60 * 60 * 1000 // 2 hours
+        this.ingesterLoop = 30 * 60 * 1000 // 30 mins
     }
 
     get tenantInterval() {
@@ -31,6 +31,10 @@ class Interval {
 
     get placementServiceInterval() {
         return this.placementServiceLoop / this.timeFactor
+    }
+
+    get ingesterInterval() {
+        return this.ingesterLoop / this.timeFactor
     }
 }
 
@@ -64,11 +68,12 @@ class Cortex {
             for (let [key, ingester] of crtx.ingesters) {
                 ingester.update()
             }
-            setTimeout(ingesterUpdate, crtx.interval.tenantInterval)
+            setTimeout(ingesterUpdate, crtx.interval.ingesterInterval)
         }
 
         placementUpdate()
         tenantUpdate()
+        ingesterUpdate()
     }
 
     updateInterval() {

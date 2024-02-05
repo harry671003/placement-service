@@ -16,17 +16,19 @@ onMounted(() => {
     ingestSeriesModal = new bootstrap.Modal('#ingestSeries', {})
 })
 
-let selectedTenant
+let selectedTenant = ref("")
 let tenantSeries = ref(0)
 
+
 function handleTenantChange() {
-    console.log("tenant selected", selectedTenant)
-    tenantSeries = ref(partitionInfo.tenants[selectedTenant].series)
-    console.log(tenantSeries)
+    const tenant = selectedTenant.value
+    tenantSeries = ref(partitionInfo.tenants[tenant].series)
 }
 
 function save() {
-    cortex.updateTenant(selectedTenant, tenantSeries)
+    const tenant = selectedTenant.value
+    const series = tenantSeries.value
+    cortex.updateTenant(tenant, series)
     ingestSeriesModal.hide()
 }
 
@@ -49,8 +51,9 @@ defineExpose({
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="col-form-label" for="tenant">Tenant: </label>
-                        <select id="tenant" class="form-select" @change="handleTenantChange()" v-model="selectedTenant">
-                            <option v-for="(_, tenant) in partitionInfo.tenants">{{ tenant }}</option>
+                        <select id="tenant" class="form-select" v-model="selectedTenant" @change="handleTenantChange">
+                            <option disabled value="">Select Tenant</option>
+                            <option v-for="(_, tenant) in partitionInfo.tenants" :value="tenant">{{ tenant }}</option>
                         </select>
                     </div>
                     <div class="form-group">
