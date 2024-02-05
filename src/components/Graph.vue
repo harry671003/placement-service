@@ -16,10 +16,10 @@ export default {
 
       const labels = []
       const data = []
-      for (let i = 0; i < ingesters.length; i++) {
-        labels.push(ingesters[i].name)
-        data.push(ingesters[i].getSeries())
-      }
+      for(let [key, ing] of ingesters) {
+          labels.push(ing.name)
+          data.push(ing.getSeriesCount())  
+      };
 
       const retval = {
         labels: labels,
@@ -27,7 +27,6 @@ export default {
           { data: data },
         ],
       }
-      console.log(retval)
 
       return retval
     },
@@ -42,5 +41,7 @@ export default {
 </script>
 
 <template>
-  <Bar id="chart" :options="chartOptions" :data="chartData" />
+  <div class="col-10">
+    <Bar id="chart" :options="chartOptions" :data="chartData" />
+  </div>
 </template>

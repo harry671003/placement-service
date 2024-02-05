@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { initCortex } from '../cortex'
+import { usePartitionInfo } from './partitioninfo'
+import {ref} from 'vue';
 
+export const useStore = defineStore('store', () => {
+    const partitionInfo = usePartitionInfo()
+    const crtx = initCortex(partitionInfo)
+    
+    const cortex = ref(crtx)
 
-export const useStore = defineStore('store', {
-    state: () => {
-        return {
-            // all these properties will have their type inferred automatically
-            cortex: initCortex(),
-        }
-    },
+    return { cortex }
 })

@@ -1,34 +1,48 @@
 import { Ingester } from './ingester.js'
-import {v4 as uuidv4} from 'uuid';
+import { Distributor } from './distributor.js'
+import { PlacementService } from './placement.js'
 
-function initCortex() {
-    const cortex = new Cortex()
+function initCortex(partitionInfo) {
+    const ingesters = new Map()
+    const distributor = new Distributor()
+    const placementService = new PlacementService(partitionInfo, ingesters)
+    const cortex = new Cortex(ingesters, distributor, placementService, partitionInfo)
     cortex.scaleUp(3)
+
+    cortex.loop()
 
     return cortex
 }
 
 class Cortex { 
-    constructor(placementService) { 
-        this.placementService = placementService;
-        this.ingesters = []
-        this.tenants = []
+    constructor(ingesters, distributor, placementService, partitionInfo) { 
+        this.ingesters = ingesters
+        this.distributor = distributor
+        this.placementService = placementService
+        this.partitionInfo - partitionInfo
+        this.timer = 5000
+    }
+
+    loop() {
+        const crtx = this
+        function loopInternal() {
+            crtx.placementService.loop()
+            setTimeout(loopInternal, crtx.timer)
+        }
+        loopInternal()
     }
   
     scaleUp(n) {
-        const curIngesters = this.ingesters.length
+        const curIngesters = this.ingesters.size
 
         for (let i = 0; i < n; i++) {
             const ing = new Ingester(`i${curIngesters + i}`)
-            this.ingesters.push(ing)
+            this.ingesters.set(ing.name, ing)
         }
     }
 
     createTenant(alias) {
-        this.tenants.push({
-            id: `ws-${uuidv4()}`,
-            alias: alias,
-        })
+        this.placementService.createTenant(alias)
     }
 }
 
