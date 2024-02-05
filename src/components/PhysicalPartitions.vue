@@ -16,6 +16,8 @@ const partitionInfo = usePartitionInfo()
                         <th scope="col">ID</th>
                         <th scope="col">minTime</th>
                         <th scope="col">maxTime</th>
+                        <th scope="col">minRange</th>
+                        <th scope="col">maxRange</th>
                         <th scope="col">stores</th>
                     </tr>
                 </thead>
@@ -24,6 +26,8 @@ const partitionInfo = usePartitionInfo()
                         <td>{{ phy.id }}</td>
                         <td> {{ phy.minTime }}</td>
                         <td> {{ phy.maxTime }}</td>
+                        <td> {{ phy.minRange.toString(16).toUpperCase() }}</td>
+                        <td> {{ phy.maxRange.toString(16).toUpperCase() }}</td>
                         <td> <span v-for=" (store, k) of phy.stores">{{ store }}, </span></td>
                     </tr>
                 </tbody>

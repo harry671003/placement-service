@@ -5,7 +5,7 @@ class Tenant {
         this.series = series
     }
 
-    loop() {
+    update() {
         this.distributor.ingest(this.tenantId, this.series)
     }
 }

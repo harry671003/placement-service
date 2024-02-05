@@ -1,10 +1,12 @@
 import {generateID} from './utils';
+import { RangePartitioner } from './partitioner';
 
 class PlacementService { 
     constructor(partitionInfo, ingesters) { 
         this.partitionInfo = partitionInfo
         this.ingesters = ingesters
         this.placementMatrix = {}
+        this.rangePartitioner = new RangePartitioner()
     }
 
     createTenant(alias) {
@@ -18,7 +20,7 @@ class PlacementService {
         return tenantID
     }
 
-    loop() {
+    update() {
         console.log("[PlacementService] loop")
         this.updatePlacementMatrix()
     }
@@ -35,9 +37,15 @@ class PlacementService {
 
         placementMatrix.sort((a, b) => {
             if (a.series == b.series) {
-                return a.physicalPartitions.size > b.physicalPartitions.size
+                if( a.physicalPartitions.size < b.physicalPartitions.size) {
+                    return -1
+                }
             }
-            a.series > b.series
+            if(a.series < b.series) {
+                return -1
+            }
+
+            return 1
         })
 
         this.placementMatrix = placementMatrix
@@ -46,22 +54,27 @@ class PlacementService {
     generateLogicalPartitions(n) {
         const lps = []
         for (let i = 0; i < n; i++) {
-            lps.push(this.generateLogicalPartition())
+            const [minRange, maxRange] = this.rangePartitioner.getRange(i, n)
+            lps.push(this.generateLogicalPartition(minRange, maxRange))
         }
         return lps
     }
 
-    generateLogicalPartition() {
-        const log = `log-${generateID()}`
-        const phy = this.generatePhysicalPartition(log)
-
-        this.partitionInfo.logicalPartitions[log] = {
-            id: log,
-            physicalPartitions: [phy],
+    generateLogicalPartition(minRange, maxRange) {
+        const id = `log-${generateID()}`
+        const log = {
+            id: id,
             minTime: new Date().toISOString(),
             maxTime: '3000-01-01T00:00:00Z',
+            minRange: minRange,
+            maxRange: maxRange,
         }
-        return log
+
+        const phy = this.generatePhysicalPartition(log)
+        log.physicalPartitions = [phy]
+
+        this.partitionInfo.logicalPartitions[id] = log
+        return id
     }
 
     generatePhysicalPartition(log) {
@@ -70,6 +83,8 @@ class PlacementService {
             id: id,
             minTime: new Date().toISOString(),
             maxTime: '3000-01-01T00:00:00Z',
+            minRange: log.minRange,
+            maxRange: log.maxRange,
         }
         const stores = this.assignPhysicalPartition(phy, 3)
 

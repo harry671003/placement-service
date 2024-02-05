@@ -48,6 +48,8 @@ const tenant = partitionInfo.tenants[props.tenantID]
                         <th scope="col">ID</th>
                         <th scope="col">minTime</th>
                         <th scope="col">maxTime</th>
+                        <th scope="col">minRange</th>
+                        <th scope="col">maxRange</th>
                         <th scope="col">physicalPartitions</th>
                     </tr>
                 </thead>
@@ -56,6 +58,8 @@ const tenant = partitionInfo.tenants[props.tenantID]
                         <td>{{ logicalPartition.id }}</td>
                         <td> {{ logicalPartition.minTime }}</td>
                         <td> {{ logicalPartition.maxTime }}</td>
+                        <td> {{ logicalPartition.minRange.toString(16).toUpperCase() }}</td>
+                        <td> {{ logicalPartition.maxRange.toString(16).toUpperCase() }}</td>
                         <td> <span v-for=" (log, k) of logicalPartition.physicalPartitions">{{ log }}, </span></td>
                     </tr>
                 </tbody>
@@ -63,3 +67,4 @@ const tenant = partitionInfo.tenants[props.tenantID]
         </div>
     </div>
 </template>
+``

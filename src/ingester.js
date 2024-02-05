@@ -5,7 +5,7 @@ class Ingester {
         this.ingestedData = new Map()
     }
 
-    loop() {
+    update() {
 
     }
 
@@ -29,7 +29,7 @@ class Ingester {
         return retval
     }
 
-    ingest(partitionId, series) {
+    push(partitionId, series) {
         const time = new Date()
         this.ingestedData.set(partitionId, {
             series: series,
