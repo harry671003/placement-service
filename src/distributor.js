@@ -6,7 +6,7 @@ class Distributor {
     }
 
     ingest(tenantID, series) {
-        const time = new Date().toISOString()
+        const time = new Date()
         const lps = this.getLogicalPartitions(tenantID, time)
 
         const seriesPerLp = series / lps.length

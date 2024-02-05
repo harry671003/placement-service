@@ -10,8 +10,10 @@ class Ingester {
         console.log("[Ingester] loop")
         const time = new Date()
         const sinceLastUpdate = time - this.lastUpdate
-        for(let [key, phy] of this.partitions) {
-            // TODO: Remove partitions with no data.
+        for(let [partitionId, phy] of this.partitions) {
+            if((time - phy.maxTime) > sinceLastUpdate) {
+                this.partitions.delete(partitionId)
+            }
         };
 
         for(let [partitionId, _] of this.partitions) {
@@ -38,7 +40,6 @@ class Ingester {
     }
 
     assignPartition(partition) {
-        partition.series = 0
         this.partitions.set(partition.id, partition)
     }
 
