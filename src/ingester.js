@@ -6,20 +6,30 @@ class Ingester {
         this.lastUpdate = new Date()
     }
 
-    update() {
+    update() { // Mocking compaction cycle
         console.log("[Ingester] loop")
         const time = new Date()
         const sinceLastUpdate = time - this.lastUpdate
         for(let [key, phy] of this.partitions) {
-            const data = this.ingestedData.get(key)
-            if(data) {
-                const sinceLastIngest = time - data.ingestionTime
-                if(sinceLastIngest < sinceLastUpdate) {
-                    continue
-                }
-            }
-            phy.series = 0
+            // TODO: Remove partitions with no data.
         };
+
+        for(let [partitionId, _] of this.partitions) {
+            const partition = this.ingestedData.get(partitionId)
+            if(!partition) {
+                continue
+            }
+
+            for(let [series, ingestedData] of partition) {
+                const sinceLastIngest = time - ingestedData.ingestionTime
+                if(sinceLastIngest > sinceLastUpdate) {
+                    partition.delete(series)
+                }
+            };
+
+            this.updatePartitionSeries(partitionId)
+        };
+
         this.lastUpdate = time
     }
 
@@ -34,27 +44,68 @@ class Ingester {
 
     getSeriesCount() {
         let retval = 0
-        for(let [key, value] of this.partitions) {
-            const ingested = this.ingestedData.get(key)
-            if (ingested) {
-                retval += ingested.series
-            }
+        for(let [partitionId, value] of this.partitions) {
+            retval += this.getSeriesForPartition(partitionId)
+            
         };
         return retval
     }
 
     push(partitionId, series) {
-        const time = new Date()
-        this.ingestedData.set(partitionId, {
+        const ingestionTime = new Date()
+
+        let partition = this.ingestedData.get(partitionId)
+        if(!partition) {
+            partition = new Map()
+        }
+
+        partition.set(series, {
             series: series,
-            ingestionTime: time,
+            ingestionTime: ingestionTime,
         })
+
+        this.ingestedData.set(partitionId, partition)
+
+        this.updatePartitionSeries(partitionId)
+    }
+
+    updatePartitionSeries(partitionId) {
+        const partition = this.ingestedData.get(partitionId)
+        if(!partition) {
+            console.warn('ingested data not found')
+            return
+        }
+        
+        let maxSeries = 0
+
+        for(let [series, ingestedData] of partition) {
+            if(ingestedData.series > maxSeries) {
+                maxSeries = ingestedData.series
+            }
+        };
+
         const phy = this.partitions.get(partitionId)
         if(!phy) {
             console.warn("physical partition not found")
             return
         }
-        phy.series = series
+        phy.series = maxSeries
+    }
+
+    getSeriesForPartition(partitionId) {
+        const partition = this.ingestedData.get(partitionId)
+        if(!partition) {
+            return 0
+        }
+
+        let maxSeries = 0
+        for(let [series, ingestedData] of partition) {
+            if(ingestedData.series > maxSeries) {
+                maxSeries = ingestedData.series
+            }
+        };
+
+        return maxSeries
     }
 }
 
