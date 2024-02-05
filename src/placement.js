@@ -9,15 +9,8 @@ class PlacementService {
         this.rangePartitioner = new RangePartitioner()
     }
 
-    createTenant(alias) {
-        const lps = this.generateLogicalPartitions(4)
-        const tenantID = `ws-${generateID()}`
-        this.partitionInfo.tenants[tenantID] = {
-            alias: alias,
-            logicalPartitions: lps, 
-        }
-
-        return tenantID
+    createTenantPartitions(series) {
+        return this.generateLogicalPartitions(4)
     }
 
     update() {

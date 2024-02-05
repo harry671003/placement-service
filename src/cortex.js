@@ -2,6 +2,7 @@ import { Ingester } from './ingester.js'
 import { Distributor } from './distributor.js'
 import { PlacementService } from './placement.js'
 import { Tenant } from './tenant.js'
+import { generateID } from './utils';
 
 function initCortex(partitionInfo) {
     const ingesters = new Map()
@@ -33,8 +34,8 @@ class Interval {
     }
 }
 
-class Cortex { 
-    constructor(ingesters, distributor, placementService, partitionInfo) { 
+class Cortex {
+    constructor(ingesters, distributor, placementService, partitionInfo) {
         this.ingesters = ingesters
         this.distributor = distributor
         this.placementService = placementService
@@ -50,17 +51,17 @@ class Cortex {
             crtx.placementService.update()
             setTimeout(placementUpdate, crtx.interval.placementServiceInterval)
         }
-        
+
 
         function tenantUpdate() {
-            for(let [key, tenant] of crtx.tenants) {
+            for (let [key, tenant] of crtx.tenants) {
                 tenant.update()
             }
             setTimeout(tenantUpdate, crtx.interval.tenantInterval)
         }
 
         function ingesterUpdate() {
-            for(let [key, ingester] of crtx.ingesters) {
+            for (let [key, ingester] of crtx.ingesters) {
                 ingester.update()
             }
             setTimeout(ingesterUpdate, crtx.interval.tenantInterval)
@@ -73,7 +74,7 @@ class Cortex {
     updateInterval() {
         this.interval = new Interval(timeFactor)
     }
-  
+
     scaleUp(n) {
         const curIngesters = this.ingesters.size
 
@@ -84,10 +85,27 @@ class Cortex {
     }
 
     createTenant(alias) {
-        const tenantID = this.placementService.createTenant(alias)
-        const tenant = new Tenant(tenantID, this.distributor, 100000)
+        const tenantID = `ws-${generateID()}`
+        const lps = this.placementService.createTenantPartitions(0)
+        this.partitionInfo.tenants[tenantID] = {
+            alias: alias,
+            logicalPartitions: lps, 
+            series: 0,
+        }
+        const tenant = new Tenant(tenantID, this.distributor, 0)
         this.tenants.set(tenantID, tenant)
+    }
+
+    updateTenant(id, series) {
+        console.log("updating tenant", id, series)
+        const tenant = this.tenants.get(id)
+        if (!tenant) {
+            console.warn("tenant not found")
+            return
+        }
+        tenant.series = series
+        this.partitionInfo.tenants[id].series = series
     }
 }
 
-export {Cortex, initCortex};
+export { Cortex, initCortex };

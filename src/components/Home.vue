@@ -1,5 +1,4 @@
 <script setup>
-import Nav from './Nav'
 import Tenants from './Tenants'
 import Graph from './Graph'
 </script>

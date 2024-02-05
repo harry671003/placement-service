@@ -7,15 +7,6 @@ const tenant = partitionInfo.tenants[props.tenantID]
 </script>
 
 <template>
-    <!-- <p v-for="(lp, k) in partitionInfo.tenants[$route.params.id].logicalPartitions">
-        {{ partitionInfo.logicalPartitions[lp] }}
-    </p> -->
-
-    <!-- <h2>Physical Partitions</h2>
-    <p v-for="(phy, k) in partitionInfo.physicalPartitions">
-        {{ phy }}
-    </p> -->
-
     <div class="container">
         <div class="row">
             <h2>Tenant</h2>
@@ -26,6 +17,7 @@ const tenant = partitionInfo.tenants[props.tenantID]
                     <tr>
                         <th scope="col">Tenant ID</th>
                         <th scope="col">Alias</th>
+                        <th scope="col">Active Series</th>
                         <th scope="col">Logical Partitions</th>
                     </tr>
                 </thead>
@@ -33,6 +25,7 @@ const tenant = partitionInfo.tenants[props.tenantID]
                     <tr>
                         <td scope="col">{{ props.tenantID }}</td>
                         <td scope="col">{{ tenant.alias }}</td>
+                        <td scope="col">{{ tenant.series }}</td>
                         <td><span v-for="(log, k) of tenant.logicalPartitions">{{ log }}, </span></td>
                     </tr>
                 </tbody>
