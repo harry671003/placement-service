@@ -5,7 +5,7 @@ const partitionInfo = usePartitionInfo()
 </script>
 
 <template>
-    <div class="col col-2 d-flex flex-column flex-shrink-0 p-3 bg-light">
+    <div class="col col-3 d-flex flex-column flex-shrink-0 p-3 bg-light">
     <span class="fs-4">Tenants</span>
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">

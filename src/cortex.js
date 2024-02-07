@@ -46,7 +46,7 @@ class Cortex {
         this.partitionInfo = partitionInfo
         this.tenants = new Map()
 
-        this.interval = new Interval(100)
+        this.interval = new Interval(200)
 
         this.createdTime = new Date()
     }
