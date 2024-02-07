@@ -45,16 +45,27 @@ class PlacementService {
         };
 
         placementMatrix.sort((a, b) => {
-            if (a.series == b.series) {
-                if (a.physicalPartitions.size < b.physicalPartitions.size) {
-                    return -1
-                }
-            }
             if (a.series < b.series) {
                 return -1
+            } 
+            if(a.series > b.series) {
+                return 1
+            }
+            // We now check for active series
+            if (a.activeSeries < b.activeSeries) {
+                return -1
+            }
+            if (a.activeSeries > b.activeSeries) {
+                return 1
+            }
+            if (a.physicalPartitions.size < b.physicalPartitions.size) {
+                return -1
+            }
+            if (a.physicalPartitions.size > b.physicalPartitions.size) {
+                return 1
             }
 
-            return 1
+            return 0
         })
 
         this.placementMatrix = placementMatrix
@@ -127,6 +138,7 @@ class PlacementService {
             this.updatePlacementMatrix()
         }
 
+        console.log(`[PlacementService] Assigning ${phy.id} to ${stores}`)
         return stores
     }
 
@@ -215,6 +227,9 @@ class PlacementService {
             if(this.split(phy.logicalPartitionId)) {
                 return true // Only allow one split per cycle
             }
+        }
+        if(partitionsToSplit.length > 0) {
+            console.log(`[PlacementService] partitions remaining to be split: ${partitionsToSplit.length}`)
         }
 
         return false
@@ -320,7 +335,7 @@ class PlacementService {
         const diffPercent = diffSeries / largestSeries
 
 
-        if (diffPercent <= 0.25) {
+        if (diffPercent <= 0.1) {
             console.log("[PlacementService] placement matrix is balanced", "largest", largestSeries, "smallest", smallestSeries, "diffPercent", diffPercent)
             return true
         }

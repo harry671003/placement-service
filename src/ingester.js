@@ -31,7 +31,7 @@ class Ingester {
 
             for(let [series, ingestedData] of partition) {
                 const sinceLastIngest = time - ingestedData.ingestionTime
-                if(sinceLastIngest > this.updateInterval) {
+                if(sinceLastIngest > this.updateInterval / 8) {
                     partition.delete(series)
                 }
             };
@@ -115,6 +115,11 @@ class Ingester {
             console.warn("physical partition not found")
             return
         }
+        
+        if(maxSeries > PARTITION_MAX_SERIES) {
+            maxSeries = PARTITION_MAX_SERIES
+        }
+        
         phy.series = maxSeries
     }
 

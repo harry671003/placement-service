@@ -24,6 +24,12 @@
                         <router-link class="nav-link" to="/physical">Physical Partitions</router-link>
                     </li>
                 </ul>
+                <div class="me-auto mb-2 mb-lg-0">
+                    <span class="text-light">Time: {{ `${Math.floor(elapsedTime / 3600)}`.padStart(2, '0')  }}:{{ `${Math.floor(elapsedTime % 3600/ 60)}`.padStart(2, '0')  }}:00 | </span> <span class="text-light">speed: {{ store.cortex.interval.timeFactor }}X</span>
+                </div>
+                <div class="me-auto mb-2 mb-lg-0">
+                    <span class="text-light"></span>
+                </div>
             </div>
         </div>
     </nav>
@@ -33,7 +39,10 @@
 <script setup>
 import { useStore } from '../store/store'
 import IngestSeries from './IngestSeries'
+import { onMounted, ref } from 'vue'
 const store = useStore()
+
+let ingestSeries
 
 function scaleIngester(event) {
     const cur = store.cortex.scaleUp(1)
@@ -43,7 +52,14 @@ function addTenant(event) {
     const cur = store.cortex.createTenant('2 Million')
 }
 
-function ingestSeries(event) {
-
-}
+let elapsedTime = ref(0)
+onMounted(() => {
+    setInterval(() => {
+        const currentTime = new Date()
+        elapsedTime.value = Math.floor((currentTime - store.cortex.createdTime) * store.cortex.interval.timeFactor / 1000)
+        // const date = new Date(null)
+        // date.setSeconds(elapsed)
+        // elapsedTime.value = date.toISOString().substr(8,8)
+    }, 1000)
+})
 </script>

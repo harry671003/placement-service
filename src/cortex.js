@@ -22,7 +22,7 @@ class Interval {
         this.timeFactor = timeFactor
         this.placementServiceLoop = 60 * 1000 // 1 minute
         this.tenantLoop = 30 * 1000 // 30 seconds
-        this.ingesterLoop = 10 * 60 * 1000 // 10 mins
+        this.ingesterLoop = 2 * 60 * 60 * 1000 // 2 hours
     }
 
     get tenantInterval() {
@@ -46,7 +46,9 @@ class Cortex {
         this.partitionInfo = partitionInfo
         this.tenants = new Map()
 
-        this.interval = new Interval(10)
+        this.interval = new Interval(100)
+
+        this.createdTime = new Date()
     }
 
     update() {
