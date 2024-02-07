@@ -1,8 +1,10 @@
 <script setup>
 import { usePartitionInfo } from '../store/partitioninfo'
+import { RangePartitioner } from '../partitioner';
 const partitionInfo = usePartitionInfo()
 const props = defineProps(['tenantID'])
 const tenant = partitionInfo.tenants[props.tenantID]
+const partitioner = new RangePartitioner()
 
 </script>
 
@@ -43,6 +45,7 @@ const tenant = partitionInfo.tenants[props.tenantID]
                         <th scope="col">maxTime</th>
                         <th scope="col">minRange</th>
                         <th scope="col">maxRange</th>
+                        <th scope="col">rangeSplit</th>
                         <th scope="col">physicalPartitions</th>
                     </tr>
                 </thead>
@@ -53,6 +56,7 @@ const tenant = partitionInfo.tenants[props.tenantID]
                         <td> {{ logicalPartition.maxTime }}</td>
                         <td> {{ logicalPartition.minRange.toString(16).toUpperCase() }}</td>
                         <td> {{ logicalPartition.maxRange.toString(16).toUpperCase() }}</td>
+                        <td> split-{{ partitioner.getRangeSplit(logicalPartition.minRange, logicalPartition.maxRange) }}</td>
                         <td> <span v-for=" (log, k) of logicalPartition.physicalPartitions">{{ log }}, </span></td>
                     </tr>
                 </tbody>

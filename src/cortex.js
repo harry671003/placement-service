@@ -21,8 +21,8 @@ class Interval {
     constructor(timeFactor) {
         this.timeFactor = timeFactor
         this.placementServiceLoop = 60 * 1000 // 1 minute
-        this.tenantLoop = 5 * 60 * 1000 // 5 minutes
-        this.ingesterLoop = 30 * 60 * 1000 // 30 mins
+        this.tenantLoop = 30 * 1000 // 30 seconds
+        this.ingesterLoop = 10 * 60 * 1000 // 10 mins
     }
 
     get tenantInterval() {
@@ -46,7 +46,7 @@ class Cortex {
         this.partitionInfo = partitionInfo
         this.tenants = new Map()
 
-        this.interval = new Interval(100)
+        this.interval = new Interval(10)
     }
 
     update() {
@@ -91,7 +91,7 @@ class Cortex {
 
     createTenant(alias) {
         const tenantID = `ws-${generateID()}`
-        const lps = this.placementService.createTenantPartitions(0)
+        const lps = this.placementService.createTenantPartitions(tenantID, 0)
         this.partitionInfo.tenants[tenantID] = {
             alias: alias,
             logicalPartitions: lps, 
@@ -102,7 +102,7 @@ class Cortex {
     }
 
     updateTenant(id, series) {
-        console.log("updating tenant", id, series)
+        console.log("[Cortex] updating tenant", id, series)
         const tenant = this.tenants.get(id)
         if (!tenant) {
             console.warn("tenant not found")
@@ -110,6 +110,7 @@ class Cortex {
         }
         tenant.series = series
         this.partitionInfo.tenants[id].series = series
+        tenant.update()
     }
 }
 

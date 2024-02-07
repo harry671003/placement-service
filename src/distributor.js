@@ -1,6 +1,9 @@
+import { RangePartitioner } from "./partitioner"
+
 
 class Distributor {
     constructor(partitionInfo, ingesters) {
+        this.rangePartitioner = new RangePartitioner()
         this.partitionInfo = partitionInfo
         this.ingesters = ingesters
     }
@@ -9,9 +12,9 @@ class Distributor {
         const time = new Date()
         const lps = this.getLogicalPartitions(tenantID, time)
 
-        const seriesPerLp = series / lps.length
-
         for (let lp of lps) {
+            const split = this.rangePartitioner.getRangeSplit(lp.minRange, lp.maxRange)
+            const seriesPerLp = series / split
             const phys = this.getPhysicalPartitions(lp, time)
             const seriesPerPhy = seriesPerLp / phys.length
 

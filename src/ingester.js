@@ -1,17 +1,24 @@
-class Ingester { 
+import _ from 'lodash';
+import { PARTITION_MAX_SERIES } from './partitioner';
+
+class Ingester {
     constructor(name) { 
         this.name = name;
         this.partitions = new Map()
         this.ingestedData = new Map()
         this.lastUpdate = new Date()
+        this.updateInterval = 10000
     }
 
     update() { // Mocking compaction cycle
-        console.log("[Ingester] loop")
+        console.log("[Ingester] compaction")
         const time = new Date()
-        const sinceLastUpdate = time - this.lastUpdate
+        this.updateInterval = time - this.lastUpdate
+
         for(let [partitionId, phy] of this.partitions) {
-            if((time - phy.maxTime) > sinceLastUpdate) {
+            // For any partition, that doesn't have samples for more than one compaction cycle
+            // They'll get removed.
+            if((time - phy.maxTime) > this.updateInterval) {
                 this.partitions.delete(partitionId)
             }
         };
@@ -24,7 +31,7 @@ class Ingester {
 
             for(let [series, ingestedData] of partition) {
                 const sinceLastIngest = time - ingestedData.ingestionTime
-                if(sinceLastIngest > sinceLastUpdate) {
+                if(sinceLastIngest > this.updateInterval) {
                     partition.delete(series)
                 }
             };
@@ -40,6 +47,11 @@ class Ingester {
     }
 
     assignPartition(partition) {
+        partition = _.cloneDeep(partition)
+        if(!this.partitions.get(partition.id)) {
+            // Creating the partition for the first time.
+            partition.createTime = new Date()
+        }
         this.partitions.set(partition.id, partition)
     }
 
@@ -47,11 +59,24 @@ class Ingester {
         let retval = 0
         for(let [partitionId, value] of this.partitions) {
             retval += this.getSeriesForPartition(partitionId)
-            
         };
         return retval
     }
 
+    getActiveSeriesCount() {
+        const time = new Date()
+        let retval = 0
+        for(let [partitionId, partition] of this.partitions) {
+            if(partition.maxTime < time) {
+                continue
+            }
+            retval += this.getSeriesForPartition(partitionId)
+        };
+        return retval
+    }
+
+    // Push receives series from distributors
+    // This mocks the ingester push.
     push(partitionId, series) {
         const ingestionTime = new Date()
 
@@ -105,6 +130,10 @@ class Ingester {
                 maxSeries = ingestedData.series
             }
         };
+
+        if(maxSeries > PARTITION_MAX_SERIES) {
+            maxSeries = PARTITION_MAX_SERIES
+        }
 
         return maxSeries
     }
