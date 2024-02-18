@@ -7,7 +7,7 @@ const partitionInfo = usePartitionInfo()
 <template>
     <div class="container">
         <div class="row">
-            <h4>Physical Partitions</h4>
+            <h4>Partitions</h4>
         </div>
         <div class="row">
             <table class="table">
@@ -22,13 +22,13 @@ const partitionInfo = usePartitionInfo()
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(phy, k) of partitionInfo.physicalPartitions">
-                        <td>{{ phy.id }}</td>
-                        <td> {{ phy.minTime }}</td>
-                        <td> {{ phy.maxTime }}</td>
-                        <td> {{ phy.minRange.toString(16).toUpperCase() }}</td>
-                        <td> {{ phy.maxRange.toString(16).toUpperCase() }}</td>
-                        <td> <span v-for=" (store, k) of phy.stores">{{ store }}, </span></td>
+                    <tr v-for="(part, k) of partitionInfo.partitions">
+                        <td>{{ part.id }}</td>
+                        <td> {{ part.minTime }}</td>
+                        <td> {{ part.maxTime }}</td>
+                        <td> {{ part.minRange.toString(16).toUpperCase() }}</td>
+                        <td> {{ part.maxRange.toString(16).toUpperCase() }}</td>
+                        <td> <span v-for=" (store, k) of part.stores">{{ store }}, </span></td>
                     </tr>
                 </tbody>
             </table>

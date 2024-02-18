@@ -6,6 +6,8 @@ const props = defineProps(['tenantID'])
 const tenant = partitionInfo.tenants[props.tenantID]
 const partitioner = new RangePartitioner()
 
+console.log(tenant)
+
 </script>
 
 <template>
@@ -20,7 +22,7 @@ const partitioner = new RangePartitioner()
                         <th scope="col">Tenant ID</th>
                         <th scope="col">Alias</th>
                         <th scope="col">Active Series</th>
-                        <th scope="col">Logical Partitions</th>
+                        <th scope="col">Partitions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -28,13 +30,13 @@ const partitioner = new RangePartitioner()
                         <td scope="col">{{ props.tenantID }}</td>
                         <td scope="col">{{ tenant.alias }}</td>
                         <td scope="col">{{ tenant.series }}</td>
-                        <td><span v-for="(log, k) of tenant.logicalPartitions">{{ log }}, </span></td>
+                        <td><span v-for="(part, k) of tenant.partitions">{{ part }}, </span></td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <div class="row">
-            <h4>Logical Partitions</h4>
+            <h4>Partitions</h4>
         </div>
         <div class="row">
             <table class="table">
@@ -46,18 +48,16 @@ const partitioner = new RangePartitioner()
                         <th scope="col">minRange</th>
                         <th scope="col">maxRange</th>
                         <th scope="col">rangeSplit</th>
-                        <th scope="col">physicalPartitions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(log, k) of tenant.logicalPartitions"  :set="logicalPartition = partitionInfo.logicalPartitions[log]">
-                        <td>{{ logicalPartition.id }}</td>
-                        <td> {{ logicalPartition.minTime }}</td>
-                        <td> {{ logicalPartition.maxTime }}</td>
-                        <td> {{ logicalPartition.minRange.toString(16).toUpperCase() }}</td>
-                        <td> {{ logicalPartition.maxRange.toString(16).toUpperCase() }}</td>
-                        <td> split-{{ partitioner.getRangeSplit(logicalPartition.minRange, logicalPartition.maxRange) }}</td>
-                        <td> <span v-for=" (log, k) of logicalPartition.physicalPartitions">{{ log }}, </span></td>
+                    <tr v-for="(part, k) of tenant.partitions"  :set="partition = partitionInfo.partitions[part]">
+                        <td>{{ partition.id }}</td>
+                        <td> {{ partition.minTime }}</td>
+                        <td> {{ partition.maxTime }}</td>
+                        <td> {{ partition.minRange.toString(16).toUpperCase() }}</td>
+                        <td> {{ partition.maxRange.toString(16).toUpperCase() }}</td>
+                        <td> 1/{{ partitioner.getRangeSplit(partition.minRange, partition.maxRange) }}</td>
                     </tr>
                 </tbody>
             </table>

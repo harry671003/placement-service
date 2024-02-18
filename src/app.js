@@ -5,7 +5,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import App from './components/App.vue'
 import Home from './components/Home.vue'
-import PhysicalPartitions from './components/PhysicalPartitions.vue'
+import Partitions from './components/Partitions.vue'
 import Tenant from './components/Tenant.vue'
 import Ingesters from './components/Ingesters.vue'
 
@@ -13,7 +13,7 @@ import Ingesters from './components/Ingesters.vue'
   const routes = [
     { path: '/', component: Home, props: true },
     { path: '/tenants/:tenantID', component: Tenant, props: true },
-    { path: '/physical', component: PhysicalPartitions, props: true },
+    { path: '/partitions', component: Partitions, props: true },
     { path: '/ingesters', component: Ingesters, props: true },
   ]
   const router = createRouter({

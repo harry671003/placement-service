@@ -10,55 +10,39 @@ class Distributor {
 
     ingest(tenantID, series) {
         const time = new Date()
-        const lps = this.getLogicalPartitions(tenantID, time)
+        const parts = this.getPartitions(tenantID, time)
 
-        for (let lp of lps) {
-            const split = this.rangePartitioner.getRangeSplit(lp.minRange, lp.maxRange)
-            const seriesPerLp = series / split
-            const phys = this.getPhysicalPartitions(lp, time)
-            const seriesPerPhy = seriesPerLp / phys.length
-
-            for (let phy of phys) {
-                this.push(phy.stores, phy.id, seriesPerPhy)
-            }
+        for (let part of parts) {
+            const split = this.rangePartitioner.getRangeSplit(part.minRange, part.maxRange)
+            const seriesPerPart = series / split
+            this.push(part.stores, part.id, seriesPerPart)
         }
     }
 
-    getLogicalPartitions(tenantID, time) {
+    getPartitions(tenantID, time) {
         const tenant = this.partitionInfo.tenants[tenantID]
         if (!tenant) {
             console.warn("tenant not found")
         }
-        const lps = []
-        for (let id of tenant.logicalPartitions) {
-            const lp = this.partitionInfo.logicalPartitions[id]
-            if (time > lp.minTime && time <= lp.maxTime) {
-                lps.push(lp)
+        const parts = []
+        for (let id of tenant.partitions) {
+            const part = this.partitionInfo.partitions[id]
+            if (time > part.minTime && time <= part.maxTime) {
+                parts.push(part)
             }
         }
 
-        return lps
+        return parts
     }
 
-    getPhysicalPartitions(lp, time) {
-        const phys = []
-        for (let id of lp.physicalPartitions) {
-            const phy = this.partitionInfo.physicalPartitions[id]
-            if (time > phy.minTime && time <= phy.maxTime) {
-                phys.push(phy)
-            }
-        }
-        return phys
-    }
-
-    push(stores, phyPartition, series) {
+    push(stores, partId, series) {
         for (const store of stores) {
             const ingester = this.ingesters.get(store)
             if (!ingester) {
                 console.warn('ingester not found')
                 return
             }
-            ingester.push(phyPartition, series)
+            ingester.push(partId, series)
         }
     }
 }

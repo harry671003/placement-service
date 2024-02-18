@@ -30,7 +30,7 @@ class PlacementService {
         this.movePartitions()
     }
 
-    // The placement service asks all ingesters about their physical partitions
+    // The placement service asks all ingesters about their partitions
     // Using this data, the placement matrix would be built which has the full picture
     // of what's going on.
     updatePlacementMatrix() {
@@ -38,7 +38,7 @@ class PlacementService {
         for (let [key, ingester] of this.ingesters) {
             placementMatrix.push({
                 ingester: ingester,
-                physicalPartitions: ingester.getPartitions(),
+                partitions: ingester.getPartitions(),
                 activeSeries: ingester.getActiveSeriesCount(),
                 series: ingester.getSeriesCount(),
             })
@@ -58,10 +58,10 @@ class PlacementService {
             if (a.activeSeries > b.activeSeries) {
                 return 1
             }
-            if (a.physicalPartitions.size < b.physicalPartitions.size) {
+            if (a.partitions.size < b.partitions.size) {
                 return -1
             }
-            if (a.physicalPartitions.size > b.physicalPartitions.size) {
+            if (a.partitions.size > b.partitions.size) {
                 return 1
             }
 
@@ -72,22 +72,27 @@ class PlacementService {
     }
 
     createTenantPartitions(tenantID, series) {
-        return this.generateLogicalPartitions(tenantID, 4)
+        return this.generatePartitions(tenantID, 2)
     }
 
-    generateLogicalPartitions(tenantID, n) {
+    generatePartitions(tenantID, n) {
         const minTime = new Date()
-        const lps = []
+        const parts = []
         for (let i = 0; i < n; i++) {
             const [minRange, maxRange] = this.rangePartitioner.getRange(i, n)
-            lps.push(this.generateLogicalPartition(tenantID, minTime, minRange, maxRange))
+            const part = this.generatePartition(tenantID, minTime, minRange, maxRange)
+            const stores = this.assignPartition(part, 3)
+
+            part.stores = stores
+            this.partitionInfo.partitions[part.id] = part
+            parts.push(part.id)
         }
-        return lps
+        return parts
     }
 
-    generateLogicalPartition(tenantID, minTime, minRange, maxRange) {
-        const id = `log-${generateID()}`
-        const log = {
+    generatePartition(tenantID, minTime, minRange, maxRange) {
+        const id = `p-${generateID()}`
+        const part = {
             id: id,
             tenantID: tenantID,
             minTime: minTime,
@@ -95,41 +100,17 @@ class PlacementService {
             minRange: minRange,
             maxRange: maxRange,
         }
-
-
-        const phy = this.generatePhysicalPartition(log.id, log.minTime, log.minRange, log.maxRange)
-        log.physicalPartitions = [phy]
-
-        this.partitionInfo.logicalPartitions[id] = log
-        return id
+        return part
     }
 
-    generatePhysicalPartition(logicalPartitionId, minTime, minRange, maxRange) {
-        const id = `phy-${generateID()}`
-        const phy = {
-            id: id,
-            logicalPartitionId: logicalPartitionId,
-            minTime: minTime,
-            maxTime: TIME_END,
-            minRange: minRange,
-            maxRange: maxRange,
-        }
-        const stores = this.assignPhysicalPartition(phy, 3)
-
-        phy.stores = stores
-        this.partitionInfo.physicalPartitions[id] = phy
-
-        return id
-    }
-
-    assignPhysicalPartition(phy, replicas) {
+    assignPartition(part, replicas) {
         const stores = []
 
         for (let mat of this.placementMatrix) {
-            if (mat.physicalPartitions.get(phy.id)) {
+            if (mat.partitions.get(part.id)) {
                 continue
             }
-            mat.ingester.assignPartition(phy)
+            mat.ingester.assignPartition(part)
             stores.push(mat.ingester.name)
 
             if (stores.length >= replicas) {
@@ -138,7 +119,7 @@ class PlacementService {
             this.updatePlacementMatrix()
         }
 
-        console.log(`[PlacementService] Assigning ${phy.id} to ${stores}`)
+        console.log(`[PlacementService] Assigning ${part.id} to ${stores}`)
         return stores
     }
 
@@ -159,7 +140,7 @@ class PlacementService {
         return false
     }
 
-    // When splitting a logical partition, 2 new logical partitions are created with 3 replicas each
+    // When splitting a partition, 2 new partitions are created with 3 replicas each
     hasCapacityForSplit(series) {
         let replicaSeries = series / 2
         if(series == PARTITION_MAX_SERIES) {
@@ -167,7 +148,7 @@ class PlacementService {
             replicaSeries = PARTITION_MAX_SERIES
         }
 
-        const seriesAfterSplit = replicaSeries * 6
+        const seriesAfterSplit = replicaSeries * 3
 
         if(!this.hasCapacity(seriesAfterSplit)) {
             return false
@@ -180,24 +161,24 @@ class PlacementService {
         const time = new Date()
         const partitionsToSplit = []
         for (let mat of this.placementMatrix) {
-            for (let [key, phy] of mat.physicalPartitions) {
-                if (phy.series == 0) {
+            for (let [key, part] of mat.partitions) {
+                if (part.series == 0) {
                     continue
                 }
-                if (phy.maxTime < time) {
+                if (part.maxTime < time) {
                     // The partition is not active.
                     continue
                 }
-                if ((time - phy.createTime) < (10) * this.updateInterval) {
+                if ((time - part.createTime) < (10) * this.updateInterval) {
                     // Not enough time elapsed between when the partition was created.
                     continue
                 }
-                if (phy.series < PARTITION_TARGET_SERIES) {
+                if (part.series < PARTITION_TARGET_SERIES) {
                     // The partition still hasn't exceeded the target
                     continue
                 }
 
-                partitionsToSplit.push(phy)
+                partitionsToSplit.push(part)
             }
         }
 
@@ -217,26 +198,33 @@ class PlacementService {
 
             return 0
         })
-
+        
         for(let partition of partitionsToSplit) {
             if(!this.hasCapacityForSplit(partition.series)) {
                 break
             }
-            // Get the logical partition ID
-            const phy = this.partitionInfo.physicalPartitions[partition.id]
-            if(this.split(phy.logicalPartitionId)) {
+            // Get the partition ID
+            const part = this.partitionInfo.partitions[partition.id]
+            if(this.split(part.id)) {
                 return true // Only allow one split per cycle
             }
         }
-        if(partitionsToSplit.length > 0) {
-            console.log(`[PlacementService] partitions remaining to be split: ${partitionsToSplit.length}`)
+
+        // Map is used to only de-dup and print a more accurate number.
+        const map = new Map()
+        for(let partition of partitionsToSplit) {
+            const part = this.partitionInfo.partitions[partition.id]
+            map.set(part.id, true)
+        }
+        if(map.size > 0) {
+            console.log(`[PlacementService] partitions remaining to be split: ${map.size}`)
         }
 
         return false
     }
 
     
-    // Moving tries to rebalance all the physical partitions on all storage nodes evenly
+    // Moving tries to rebalance all the partitions on all storage nodes evenly
     // Approach: 
     // Get the largest partition from the largest ingester and put it on the smallest ingester
     movePartitions() {
@@ -254,20 +242,20 @@ class PlacementService {
 
         const sourcePartitions = []
         // Get the active partitions from the largest ingester
-        for (let [key, phy] of sourceIngester.physicalPartitions) {
-            if (phy.series == 0) {
+        for (let [key, part] of sourceIngester.partitions) {
+            if (part.series == 0) {
                 continue
             }
-            if (phy.maxTime < time) {
+            if (part.maxTime < time) {
                 // The partition is not active.
                 continue
             }
-            if ((time - phy.createTime) < (10) * this.updateInterval) {
+            if ((time - part.createTime) < (10) * this.updateInterval) {
                 // Not enough time elapsed between when the partition was created.
                 continue
             }
 
-            sourcePartitions.push(phy)
+            sourcePartitions.push(part)
         }
 
         sourcePartitions.sort((a, b) => {
@@ -290,7 +278,7 @@ class PlacementService {
     }
 
     tryMove(partition, sourceIngester, destIngester) {
-        if (destIngester.physicalPartitions.get(partition.id)) {
+        if (destIngester.partitions.get(partition.id)) {
             // The partition is already present on the destination ingester
             return false
         }
@@ -342,75 +330,83 @@ class PlacementService {
         return false
     }
 
-    // Move moves a physical partition from source to destination
-    move(ingPhy, source, dest) {
-        console.log(`[PlacementService] Moving: ${ingPhy.id} - ${ingPhy.series}]`, `[source: ${source.name} - ${source.getSeriesCount()}]`, `[dest: ${dest.name} - ${dest.getSeriesCount()}]`)
+    // Move moves a partition from source to destination
+    move(ingpart, source, dest) {
+        console.log(`[PlacementService] Moving: ${ingpart.id} - ${ingpart.series}]`, `[source: ${source.name} - ${source.getSeriesCount()}]`, `[dest: ${dest.name} - ${dest.getSeriesCount()}]`)
         const moveTime = new Date()
 
         // Update the partition info
-        const phy = this.partitionInfo.physicalPartitions[ingPhy.id]
-        const stores = phy.stores.filter((store) => {
+        const part = this.partitionInfo.partitions[ingpart.id]
+        const stores = part.stores.filter((store) => {
             return store != source.name
         })
         stores.push(dest.name)
-        phy.stores = stores
-        this.partitionInfo.physicalPartitions[phy.id] = phy
+        part.stores = stores
+        this.partitionInfo.partitions[part.id] = part
 
         // Update ingesters
-        dest.assignPartition(ingPhy)
-        ingPhy.maxTime = moveTime // Close the old partition
-        source.assignPartition(ingPhy)
+        dest.assignPartition(ingpart)
+        ingpart.maxTime = moveTime // Close the old partition
+        source.assignPartition(ingpart)
     }
 
-    // Split operation splits a logical partition into 2
-    split(logicalPartitionId) {
+    // Split operation splits a partition into 2
+    split(partitionId) {
         const splitTime = new Date()
-        const lp = this.partitionInfo.logicalPartitions[logicalPartitionId]
+        const part = this.partitionInfo.partitions[partitionId]
 
-        const [leftMinRange, leftMaxRange, rightMinRange, rightMaxRange] = this.rangePartitioner.splitRange(lp.minRange, lp.maxRange)
+        const [leftMinRange, leftMaxRange, rightMinRange, rightMaxRange] = this.rangePartitioner.splitRange(part.minRange, part.maxRange)
 
-        // Split and create two new logical partitions
-        // They will be backed by other physical partitions
-        const leftPartition = this.generateLogicalPartition(lp.tenantID, splitTime, leftMinRange, leftMaxRange)
-        const rightPartition = this.generateLogicalPartition(lp.tenantID, splitTime, rightMinRange, rightMaxRange)
+        // Split and create two new partitions
+        // They will be backed by other partitions
+        const leftPartition = this.generatePartition(part.tenantID, splitTime, leftMinRange, leftMaxRange)
+        const rightPartition = this.generatePartition(part.tenantID, splitTime, rightMinRange, rightMaxRange)
 
-        const splits = this.rangePartitioner.getRangeSplit(lp.minRange, lp.maxRange)
+        // Assign the left partitition to the same stores as the old partition
+        leftPartition.stores = part.stores
+        this.assignPartitionToStores(leftPartition, leftPartition.stores)
+
+        // Assingn the right partition to other ingesters
+        const stores = this.assignPartition(rightPartition, 3)
+        rightPartition.stores = stores
+
+        const splits = this.rangePartitioner.getRangeSplit(part.minRange, part.maxRange)
 
 
         // Assign partitions to tenant
-        const tenant = this.partitionInfo.tenants[lp.tenantID]
-        tenant.logicalPartitions.push(leftPartition, rightPartition)
-        
+        const tenant = this.partitionInfo.tenants[part.tenantID]
+        tenant.partitions.push(leftPartition.id, rightPartition.id)
 
-        // Close the old logical partitions
+        this.partitionInfo.partitions[leftPartition.id] = leftPartition
+        this.partitionInfo.partitions[rightPartition.id] = rightPartition        
+
+        // Close the old partition
         // Set the maxTime
-        lp.maxTime = splitTime
-        this.partitionInfo.logicalPartitions[logicalPartitionId] = lp
-
-        // Close the physical partition replicas
-        for(let phyId of lp.physicalPartitions) {
-            const phy = this.partitionInfo.physicalPartitions[phyId]
-            for(let store of phy.stores) {
-                const ingester = this.ingesters.get(store)
-                const ingPhy = {
-                    id: phy.id,
-                    logicalPartitionId: phy.logicalPartitionId,
-                    minTime: phy.minTime,
-                    maxTime: splitTime,
-                    minRange: phy.minRange,
-                    maxRange: phy.maxRange,
-                }
-                ingester.assignPartition(ingPhy)
-            }
-        }
-
-        console.log(`[PlacementService] Splitting (${splits} to ${splits * 2})`, `partition: ${lp.id} -> (${lp.minRange}, ${lp.maxRange})`, `leftPartition: ${leftPartition} -> (${leftMinRange}, ${leftMaxRange})`, `rightPartition: ${rightPartition} -> (${rightMinRange}, ${rightMaxRange})`)
+        part.maxTime = splitTime
+        this.partitionInfo.partitions[partitionId] = part
+        this.assignPartitionToStores(part, part.stores)
+        
+        console.log(`[PlacementService] Splitting (${splits} to ${splits * 2})`, `partition: ${part.id} -> (${part.minRange}, ${part.maxRange})`, `leftPartition: ${leftPartition.id} -> (${leftMinRange}, ${leftMaxRange})`, `rightPartition: ${rightPartition.id} -> (${rightMinRange}, ${rightMaxRange})`)
         return true
     }
 
+    assignPartitionToStores(part, stores) {
+        for(let store of stores) {
+            const ingester = this.ingesters.get(store)
+            const ingpart = {
+                id: part.id,
+                minTime: part.minTime,
+                maxTime: part.maxTime,
+                minRange: part.minRange,
+                maxRange: part.maxRange,
+            }
+            ingester.assignPartition(ingpart)
+        }
+    }
+
     // Partition operations
-    // 1. split -> Split a logical partition into two partitions
-    // 2. move -> Move a physical partition from one ingester to another ingester
+    // 1. split -> Split a partition into two partitions
+    // 2. move -> Move a partition from one ingester to another ingester
     // 3. Partition capacity -> 
 }
 

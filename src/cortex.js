@@ -93,10 +93,10 @@ class Cortex {
 
     createTenant(alias) {
         const tenantID = `ws-${generateID()}`
-        const lps = this.placementService.createTenantPartitions(tenantID, 0)
+        const parts = this.placementService.createTenantPartitions(tenantID, 0)
         this.partitionInfo.tenants[tenantID] = {
             alias: alias,
-            logicalPartitions: lps, 
+            partitions: parts, 
             series: 0,
         }
         const tenant = new Tenant(tenantID, this.distributor, 0)

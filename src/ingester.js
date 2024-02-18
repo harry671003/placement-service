@@ -112,14 +112,14 @@ class Ingester {
 
         const phy = this.partitions.get(partitionId)
         if(!phy) {
-            console.warn("physical partition not found")
+            console.warn("partition not found")
             return
         }
         
         if(maxSeries > PARTITION_MAX_SERIES) {
             maxSeries = PARTITION_MAX_SERIES
         }
-        
+
         phy.series = maxSeries
     }
 

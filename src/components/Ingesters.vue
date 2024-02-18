@@ -27,13 +27,13 @@ const store = useStore()
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="[k, phy] of ing.partitions">
-                            <td>{{ phy.id }}</td>
-                            <td> {{ phy.minTime }}</td>
-                            <td> {{ phy.maxTime }}</td>
-                            <td> {{ phy.minRange.toString(16).toUpperCase() }}</td>
-                            <td> {{ phy.maxRange.toString(16).toUpperCase() }}</td>
-                            <td> {{ phy.series }}</td>
+                        <tr v-for="[k, part] of ing.partitions">
+                            <td>{{ part.id }}</td>
+                            <td> {{ part.minTime }}</td>
+                            <td> {{ part.maxTime }}</td>
+                            <td> {{ part.minRange.toString(16).toUpperCase() }}</td>
+                            <td> {{ part.maxRange.toString(16).toUpperCase() }}</td>
+                            <td> {{ part.series }}</td>
                         </tr>
                     </tbody>
                 </table>

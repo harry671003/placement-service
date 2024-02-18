@@ -21,7 +21,7 @@
                         <router-link class="nav-link" to="/ingesters">Ingesters</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/physical">Physical Partitions</router-link>
+                        <router-link class="nav-link" to="/partitions">Partitions</router-link>
                     </li>
                 </ul>
                 <div class="me-auto mb-2 mb-lg-0">
